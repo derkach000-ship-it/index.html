@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BusHub — Поиск и бронирование билетов</title>
+    <style>
+        :root {
+            --bg: #0b0f19;
+            --surface: #151c2c;
+            --surface-hover: #1e293d;
+            --accent: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, 0.4);
+            --success: #10b981;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border: rgba(255, 255, 255, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        /* Шапка */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo span {
+            color: var(--accent);
+        }
+
+        .badge-live {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .hero-title {
+            margin-bottom: 24px;
+        }
+
+        .hero-title h1 {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .hero-title p {
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+
+        /* Список рейсов */
+        .tickets-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .ticket-card {
+            background-color: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1.2fr;
+            align-items: center;
+            gap: 20px;
+            transition: all 0.2s ease;
+        }
+
+        .ticket-card:hover {
+            background-color: var(--surface-hover);
+            border-color: rgba(59, 130, 246, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Инфо о маршруте */
+        .route-info {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .cities {
+            font-size: 1.2rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .cities .arrow {
+            color: var(--accent);
+            font-size: 1rem;
+        }
+
+        .details {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            display: flex;
+            gap: 12px;
+        }
+
+        /* Время и длительность */
+        .time-info {
+            text-align: left;
+        }
+
+        .departure-time {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .duration {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        /* Места и комфорт */
+        .seats-info {
+            font-size: 0.85rem;
+        }
+
+        .seats-count {
+            color: var(--success);
+            font-weight: 600;
+        }
+
+        .seats-count.low {
+            color: #f59e0b;
+        }
+
+        /* Цена и кнопка */
+        .action-block {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+        }
+
+        .price {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #fff;
+        }
+
+        .btn-book {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px var(--accent-glow);
+            width: 100%;
+        }
+
+        .btn-book:hover {
+            background: #2563eb;
+            transform: scale(1.02);
+        }
+
+        .btn-book:disabled {
+            background: #475569;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        /* Уведомление об успешной отправке */
+        #notification {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #1e293b;
+            border: 1px solid var(--accent);
+            color: #fff;
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+            display: none;
+            z-index: 100;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @media (max-width: 768px) {
+            .ticket-card {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+            .action-block {
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <div class="logo">⚡️ Bus<span>Hub</span></div>
+        <div class="badge-live">● Рейсы обновлены онлайн</div>
+    </div>
+
+    <div class="hero-title">
+        <h1>Популярные международные рейсы</h1>
+        <p>Выберите нужный рейс и забронируйте место в 1 клик</p>
+    </div>
+
+    <div class="tickets-list">
+        
+        <!-- Карточка 1 -->
+        <div class="ticket-card">
+            <div class="route-info">
+                <div class="cities">Киев <span class="arrow">➔</span> Варшава</div>
+                <div class="details">
+                    <span>Перевозчик: Ecolines</span> • <span>Wi-Fi & Розетки</span>
+                </div>
+            </div>
+            <div class="time-info">
+                <div class="departure-time">08:30</div>
+                <div class="duration">В пути: 14 ч.</div>
+            </div>
+            <div class="seats-info">
+                Осталось: <span class="seats-count">12 мест</span>
+            </div>
+            <div class="action-block">
+                <div class="price">1 450 ₴</div>
+                <button class="btn-book" onclick="bookTicket('BUS-101', 'Киев - Варшава', '1 450 ₴', '08:30', this)">Забронировать</button>
+            </div>
+        </div>
+
+        <!-- Карточка 2 -->
+        <div class="ticket-card">
+            <div class="route-info">
+                <div class="cities">Львов <span class="arrow">➔</span> Краков</div>
+                <div class="details">
+                    <span>Перевозчик: FlixBus</span> • <span>Кондиционер</span>
+                </div>
+            </div>
+            <div class="time-info">
+                <div class="departure-time">14:15</div>
+                <div class="duration">В пути: 7 ч.</div>
+            </div>
+            <div class="seats-info">
+                Осталось: <span class="seats-count low">3 места</span>
+            </div>
+            <div class="action-block">
+                <div class="price">980 ₴</div>
+                <button class="btn-book" onclick="bookTicket('BUS-204', 'Львов - Краков', '980 ₴', '14:15', this)">Забронировать</button>
+            </div>
+        </div>
+
+        <!-- Карточка 3 -->
+        <div class="ticket-card">
+            <div class="route-info">
+                <div class="cities">Киев <span class="arrow">➔</span> Берлин</div>
+                <div class="details">
+                    <span>Перевозчик: EuroClub</span> • <span>Питание включено</span>
+                </div>
+            </div>
+            <div class="time-info">
+                <div class="departure-time">21:00</div>
+                <div class="duration">В пути: 22 ч.</div>
+            </div>
+            <div class="seats-info">
+                Осталось: <span class="seats-count">8 мест</span>
+            </div>
+            <div class="action-block">
+                <div class="price">2 900 ₴</div>
+                <button class="btn-book" onclick="bookTicket('BUS-309', 'Киев - Берлин', '2 900 ₴', '21:00', this)">Забронировать</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div id="notification"></div>
+
+<script>
+    // ⚠️ ВСТАВЬТЕ СЮДА ВАШ ТЕКУЩИЙ WEBHOOK URL ОТ CLOUDFLARE
+    const WEBHOOK_URL = 'https://numbers-being-playlist-destination.trycloudflare.com/webhook/lead-intake';
+
+    async function bookTicket(ticketId, route, price, time, buttonElement) {
+        const originalText = buttonElement.innerText;
+        buttonElement.disabled = true;
+        buttonElement.innerText = 'Отправка...';
+
+        const payload = {
+            event: 'ticket_booking_click',
+            ticket_id: ticketId,
+            route: route,
+            price: price,
+            departure_time: time,
+            timestamp: new Date().toISOString()
+        };
+
+        try {
+            const response = await fetch(WEBHOOK_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                showNotification(`🎉 Вы забронировали билет на рейс ${route}! Информация отправлена в обработку.`);
+                buttonElement.innerText = 'Забронировано ✓';
+                buttonElement.style.background = '#10b981';
+            } else {
+                throw new Error('Server error');
+            }
+        } catch (err) {
+            showNotification('❌ Ошибка отправки запроса в n8n.');
+            buttonElement.disabled = false;
+            buttonElement.innerText = originalText;
+        }
+    }
+
+    function showNotification(text) {
+        const notif = document.getElementById('notification');
+        notif.innerText = text;
+        notif.style.display = 'block';
+
+        setTimeout(() => {
+            notif.style.display = 'none';
+        }, 4000);
+    }
+</script>
+
+</body>
+</html>
